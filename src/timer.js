@@ -1,13 +1,16 @@
 import {useState} from 'react'
 
-
-export function startTimer(pausedTime, totalTime) {
-  const [timerState, setTimerState] = useState({
+export function useTimerState() {
+ const [timerState, setTimerState] = useState({
     seconds: 0,
     isRunning: false,
     reset: false,
     currentButton: 'start',
   });
+ return [timerState, setTimerState]
+}
+
+export function startTimer(pausedTime, totalTime) {
   const startTime = Date.now() - pausedTime;
   let elapsedTime = pausedTime;
 
@@ -35,7 +38,7 @@ export function resetTimer(countdown) {
 }
 
 
-export const handleButtonClick = () => {
+export const handleButtonClick = (timerState, setTimerState) => {
   if (timerState.currentButton === 'start') {
     setTimerState({
       ...timerState,
