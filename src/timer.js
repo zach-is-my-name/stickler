@@ -10,10 +10,9 @@ export function useTimerState() {
  return [timerState, setTimerState]
 }
 
-export function startTimer(pausedTime, totalTime) {
+export function startTimer(pausedTime, totalTime, updateCountdown) {
   const startTime = Date.now() - pausedTime;
   let elapsedTime = pausedTime;
-
 
   const countdown = setInterval(() => {
     elapsedTime = Date.now() - startTime;
@@ -22,6 +21,7 @@ export function startTimer(pausedTime, totalTime) {
       clearInterval(countdown);
       elapsedTime = totalTime;
     }
+    updateCountdown(totalTime - elapsedTime);
   }, 1000);
 
   return { countdown, elapsedTime };
@@ -38,20 +38,26 @@ export function resetTimer(countdown) {
 }
 
 
-export const handleButtonClick = (timerState, setTimerState) => {
+export const handleButtonClick = (timerState, setTimerState, countdown, setCountdown, hours, minutes) => {
   if (timerState.currentButton === 'start') {
+    const totalTime = (hours * 60 + minutes) * 60 * 1000;
+    const { countdown: newCountdown } = startTimer(0, totalTime, setCountdown);
+    setCountdown(newCountdown);
     setTimerState({
       ...timerState,
       isRunning: true,
       currentButton: 'pause',
     });
   } else if (timerState.currentButton === 'pause') {
+    clearInterval(countdown);
     setTimerState({
       ...timerState,
       isRunning: false,
       currentButton: 'reset',
     });
   } else if (timerState.currentButton === 'reset') {
+    clearInterval(countdown);
+    setCountdown(0);
     setTimerState({
       seconds: 0,
       isRunning: false,
@@ -60,3 +66,13 @@ export const handleButtonClick = (timerState, setTimerState) => {
     });
   }
 };
+
+export function formatTime(milliseconds) {
+  const totalSeconds = Math.floor(milliseconds / 1000);
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
+
+  return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+}
+
