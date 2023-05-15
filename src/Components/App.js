@@ -1,76 +1,87 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import TimeInputGroup from './TimeInputGroup.js' 
-import ButtonGroup from './ButtonGroup.js'
-import ApplicationsInputGroup from './ApplicationsInputGroup.js'
-import ApplicationsDisplayGroup from './ApplicationsDisplayGroup';
-import { useHandleButtonClick, useStartTimer, pauseTimer, resetTimer, formatTime} from '../timer';
+import useCountDown from 'react-countdown-hook';
+import ApplicationCountForm from './ApplicationCountForm';
 
 const App = () => {
-  const [countdown, setCountdown] = useState(0);
-  const [pausedTime, setPausedTime] = useState(0);
   const [hours, setHours] = useState(0);
   const [minutes, setMinutes] = useState(0);
-  const [intervalId, setIntervalId] = useState();
+  const [timeInMilliseconds, setTimeInMilliseconds] = useState(0);
 
-  const [timerState, setTimerState] = useState({
-    seconds: 0,
-    isRunning: false,
-    reset: false,
-    currentButton: 'start',
-  });
+  const [
+    remainingTime,
+    { start: startCountDown, pause: pauseCountDown, stop: stopCountDown, reset: resetCountDown },
+  ] = useCountDown(timeInMilliseconds, 1000);
 
+  const [showApplicationCountForm, setShowApplicationCountForm] = useState(false);
 
-  const [totalApplications, setTotalApplications] = useState(
-    parseInt(localStorage.getItem('totalApplications'), 10) || 0
-  );
+  const setNewTime = useCallback(() => {
+    const newTimeInMilliseconds = (hours * 60 * 60 + minutes * 60) * 1000;
+    setTimeInMilliseconds(newTimeInMilliseconds);
+  }, [hours, minutes]);
 
   useEffect(() => {
-    (function updateTotalApplications(total) {
-      localStorage.setItem('totalApplications', total);
-    })(totalApplications);
-  }, [totalApplications]);
+    setNewTime();
+  }, [hours, minutes, setNewTime]);
 
-  const handleButtonClickResult = useHandleButtonClick(intervalId, setIntervalId, timerState, setTimerState, pausedTime, setPausedTime, hours, minutes, setCountdown);
+  const handleHoursChange = (e) => {
+    setHours(e.target.value);
+  };
+
+  const handleMinutesChange = (e) => {
+    setMinutes(e.target.value);
+  };
+
+  const handleApplicationCountSubmit = (applicationCount) => {
+    console.log('Submitted Application Count:', applicationCount);
+    // Handle the submitted application count as needed
+  };
+
+  const formatTime = (time) => {
+    const seconds = Math.floor((time / 1000) % 60);
+    const minutes = Math.floor((time / (1000 * 60)) % 60);
+    const hours = Math.floor((time / (1000 * 60 * 60)) % 24);
+    return `${hours.toString().padStart(2, '0')}:${minutes
+      .toString()
+      .padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+  };
+
+  const onStart = () => {
+    const initialTime = (hours * 60 * 60 + minutes * 60) * 1000;
+      startCountDown(initialTime);
+  };
+
+  const onPause = () => {
+    pauseCountDown();
+    setShowApplicationCountForm(true);
+  };
+
+  const onStop = () => {
+    stopCountDown();
+    setShowApplicationCountForm(true);
+  };
+
+  const onReset = () => {
+    resetCountDown();
+  };
 
   return (
-    <>
-    <h1>Stickler</h1>
-    <TimeInputGroup 
-    setHours={setHours} 
-    setMinutes={setMinutes} 
-    minutes={minutes} 
-    hours={hours}
-    /> 
-
-    <ApplicationsInputGroup 
-    setTotalApplications={setTotalApplications} 
-    totalApplications={totalApplications} 
-    />  
-
-    <div className="buttonGroup">
-    {timerState.currentButton === 'start' ? (
-      <button onClick={handleButtonClickResult}>
-      Start
-      </button>
-    ) : timerState.currentButton === 'pause' ? (
-      <button onClick={handleButtonClickResult}>
-      Pause
-      </button>
-    ) : (
-      <button onClick={handleButtonClickResult}>
-      Reset
-      </button>
-    )}
+    <div>
+      <h1>Stickler</h1>
+      <input type="number" value={hours} onChange={handleHoursChange} placeholder="Hours" />
+      <input type="number" value={minutes} onChange={handleMinutesChange} placeholder="Minutes" />
+      <div>
+        <h2>Time Remaining: {formatTime(remainingTime)}</h2>
+      </div>
+      <button onClick={onStart}>Start</button>
+      <button onClick={onPause}>Pause</button>
+      <button onClick={onStop}>Stop</button>
+      <button onClick={onReset}>Reset</button>
+      {showApplicationCountForm && (
+        <ApplicationCountForm onSubmit={handleApplicationCountSubmit} />
+      )}
     </div>
-
-    <div id="timer">{formatTime(countdown)}</div>
-    <ApplicationsDisplayGroup totalApplications={totalApplications} 
-    /> 
-    </>
   );
 };
 
 export default App;
-
-
-
+  
