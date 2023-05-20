@@ -1,7 +1,7 @@
 import { GoogleSpreadsheet } from 'google-spreadsheet';
-const clientEmail = process.env.REACT_APP_CLIENT_EMAIL;
-const privateKey = process.env.REACT_APP_PRIVATE_KEY;
-const spreadsheetId = process.env.REACT_APP_SPREADSHEET_ID;
+const clientEmail = process.env.CLIENT_EMAIL;
+const privateKey = process.env.PRIVATE_KEY;
+const spreadsheetId = process.env.SPREADSHEET_ID;
 const doc = new GoogleSpreadsheet(spreadsheetId);
 
 // Initialize Auth - see more available options at https://theoephraim.github.io/node-google-spreadsheet/#/getting-started/authentication
