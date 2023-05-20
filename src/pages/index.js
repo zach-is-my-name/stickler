@@ -1,9 +1,16 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import useCountDown from 'react-countdown-hook';
 import ApplicationCountForm from '../Components/ApplicationCountForm.js';
-import { addRowToSheet } from '../googleSheetAPI.js'; 
+import ky from 'ky';
 
 const App = () => {
+const millisecondsToTime = (milliseconds) => {
+  const totalSeconds = Math.floor(milliseconds / 1000);
+  const totalMinutes = Math.floor(totalSeconds / 60);
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+  return `${hours}:${minutes.toString().padStart(2, '0')}`;
+};
   const [hours, setHours] = useState(0);
   const [minutes, setMinutes] = useState(0);
   const [timeInMilliseconds, setTimeInMilliseconds] = useState(0);
@@ -32,39 +39,45 @@ const App = () => {
     setMinutes(e.target.value);
   };
 
-const handleApplicationCountSubmit = async (applicationCount) => {
-  const sessionApplications = Math.abs(localStorage.getItem('totalApplicationCount') - applicationCount) || 0;
-  const totalApplications = localStorage.getItem('totalApplicationCount')
-  const timeAllocated = (hours * 60 * 60 + minutes * 60) * 1000;
-  const actualTime = timeInMilliseconds - remainingTime;
-  const timeCompleted = timeAllocated === actualTime;
+  const handleApplicationCountSubmit = async (applicationCount) => {
+    const sessionApplications = Math.abs(localStorage.getItem('totalApplicationCount') - applicationCount) || 0;
+    const totalApplications = localStorage.getItem('totalApplicationCount')
+    const timeAllocated = (hours * 60 * 60 + minutes * 60) * 1000;
+    const actualTime = timeInMilliseconds - remainingTime;
+    const timeCompleted = timeAllocated === actualTime;
+    const formattedTimeAllocated = millisecondsToTime(timeAllocated);
 
-  localStorage.setItem('totalApplicationCount', applicationCount + localStorage.getItem('totalApplicationCount'))
+    localStorage.setItem('totalApplicationCount', applicationCount + localStorage.getItem('totalApplicationCount'))
 
-  const data = {
-    Date: new Date().toLocaleString(),
-    'Time Allocated': timeAllocated,
-    'Actual Time': actualTime,
-    'Time Completed': timeCompleted,
-    'Session Applications': sessionApplications,
-    'Total Applications': totalApplications
+    const data = {
+      Date: new Date().toLocaleString(),
+      'Time Allocated': formattedTimeAllocated ,
+      'Actual Time': actualTime,
+      'Time Completed': timeCompleted,
+      'Session Applications': sessionApplications,
+      'Total Applications': totalApplications + applicationCount
+    };
+
+    try {
+      const response = await ky.post('/api/googleSheetAPI', {json: data}).json();
+      console.log(response);
+    } catch (error) {
+      console.error(error);
+    }
   };
-
-  await addRowToSheet(data);
-};
 
   const formatTime = (time) => {
     const seconds = Math.floor((time / 1000) % 60);
     const minutes = Math.floor((time / (1000 * 60)) % 60);
     const hours = Math.floor((time / (1000 * 60 * 60)) % 24);
     return `${hours.toString().padStart(2, '0')}:${minutes
-      .toString()
-      .padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        .toString()
+        .padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
   };
 
   const onStart = () => {
     const initialTime = (hours * 60 * 60 + minutes * 60) * 1000;
-      startCountDown(initialTime);
+    startCountDown(initialTime);
   };
 
   const onPause = () => {
@@ -83,19 +96,19 @@ const handleApplicationCountSubmit = async (applicationCount) => {
 
   return (
     <div>
-      <h1>Stickler</h1>
-      <input type="number" value={hours} onChange={handleHoursChange} placeholder="Hours" />
-      <input type="number" value={minutes} onChange={handleMinutesChange} placeholder="Minutes" />
-      <div>
-        <h2>Time Remaining: {formatTime(remainingTime)}</h2>
-      </div>
-      <button onClick={onStart}>Start</button>
-      <button onClick={onPause}>Pause</button>
-      <button onClick={onReset}>Stop</button>
-      <button onClick={onReset}>Reset</button>
-      {showApplicationCountForm && (
-        <ApplicationCountForm onSubmit={handleApplicationCountSubmit} />
-      )}
+    <h1>Stickler</h1>
+    <input type="number" value={hours} onChange={handleHoursChange} placeholder="Hours" />
+    <input type="number" value={minutes} onChange={handleMinutesChange} placeholder="Minutes" />
+    <div>
+    <h2>Time Remaining: {formatTime(remainingTime)}</h2>
+    </div>
+    <button onClick={onStart}>Start</button>
+    <button onClick={onPause}>Pause</button>
+    <button onClick={onReset}>Stop</button>
+    <button onClick={onReset}>Reset</button>
+    {showApplicationCountForm && (
+      <ApplicationCountForm onSubmit={handleApplicationCountSubmit} />
+    )}
     </div>
   );
 };
