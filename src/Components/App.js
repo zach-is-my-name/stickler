@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import useCountDown from 'react-countdown-hook';
 import ApplicationCountForm from './ApplicationCountForm';
+import { addRowToSheet } from '../googleSheetAPI.js'; 
 
 const App = () => {
   const [hours, setHours] = useState(0);
@@ -31,10 +32,26 @@ const App = () => {
     setMinutes(e.target.value);
   };
 
-  const handleApplicationCountSubmit = (applicationCount) => {
-    console.log('Submitted Application Count:', applicationCount);
-    // Handle the submitted application count as needed
+const handleApplicationCountSubmit = async (applicationCount) => {
+  const sessionApplications = Math.abs(localStorage.getItem('totalApplicationCount') - applicationCount) || 0;
+  const totalApplications = localStorage.getItem('totalApplicationCount')
+  const timeAllocated = (hours * 60 * 60 + minutes * 60) * 1000;
+  const actualTime = timeInMilliseconds - remainingTime;
+  const timeCompleted = timeAllocated === actualTime;
+
+  localStorage.setItem('totalApplicationCount', applicationCount + localStorage.getItem('totalApplicationCount'))
+
+  const data = {
+    Date: new Date().toLocaleString(),
+    'Time Allocated': timeAllocated,
+    'Actual Time': actualTime,
+    'Time Completed': timeCompleted,
+    'Session Applications': sessionApplications,
+    'Total Applications': totalApplications
   };
+
+  await addRowToSheet(data);
+};
 
   const formatTime = (time) => {
     const seconds = Math.floor((time / 1000) % 60);
@@ -74,7 +91,7 @@ const App = () => {
       </div>
       <button onClick={onStart}>Start</button>
       <button onClick={onPause}>Pause</button>
-      <button onClick={onStop}>Stop</button>
+      <button onClick={onReset}>Stop</button>
       <button onClick={onReset}>Reset</button>
       {showApplicationCountForm && (
         <ApplicationCountForm onSubmit={handleApplicationCountSubmit} />
@@ -84,4 +101,3 @@ const App = () => {
 };
 
 export default App;
-  
