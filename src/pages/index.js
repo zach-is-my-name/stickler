@@ -11,13 +11,14 @@ const millisecondsToTime = (milliseconds) => {
   const minutes = totalMinutes % 60;
   return `${hours}:${minutes.toString().padStart(2, '0')}`;
 };
+  const [lastClicked, setLastClicked] = useState(null);
   const [hours, setHours] = useState(0);
   const [minutes, setMinutes] = useState(0);
   const [timeInMilliseconds, setTimeInMilliseconds] = useState(0);
 
   const [
     remainingTime,
-    { start: startCountDown, pause: pauseCountDown, stop: stopCountDown, reset: resetCountDown },
+    { start: startCountDown, pause: pauseCountDown, reset: resetCountDown },
   ] = useCountDown(timeInMilliseconds, 1000);
 
   const [showApplicationCountForm, setShowApplicationCountForm] = useState(false);
@@ -78,20 +79,23 @@ const millisecondsToTime = (milliseconds) => {
   const onStart = () => {
     const initialTime = (hours * 60 * 60 + minutes * 60) * 1000;
     startCountDown(initialTime);
+    setLastClicked('start');
   };
 
   const onPause = () => {
     pauseCountDown();
-    setShowApplicationCountForm(true);
+    setLastClicked('pause');
   };
 
   const onStop = () => {
-    stopCountDown();
+    pauseCountDown();
     setShowApplicationCountForm(true);
+    setLastClicked('stop');
   };
 
   const onReset = () => {
     resetCountDown();
+    setLastClicked(null); // Reset all buttons to default color
   };
 
   return (
@@ -102,9 +106,9 @@ const millisecondsToTime = (milliseconds) => {
     <div>
     <h2>Time Remaining: {formatTime(remainingTime)}</h2>
     </div>
-    <button onClick={onStart}>Start</button>
-    <button onClick={onPause}>Pause</button>
-    <button onClick={onReset}>Stop</button>
+    <button onClick={onStart} className={lastClicked === 'start' ? 'start' : ''}>Start</button>
+    <button onClick={onPause} className={lastClicked === 'pause' ? 'pause' : ''}>Pause</button>
+    <button onClick={onStop} className={lastClicked === 'stop' ? 'stop' : ''} >Stop</button>
     <button onClick={onReset}>Reset</button>
     {showApplicationCountForm && (
       <ApplicationCountForm onSubmit={handleApplicationCountSubmit} />

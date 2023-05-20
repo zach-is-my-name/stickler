@@ -86,3 +86,18 @@
           margin-right: 0;
         }
 
+        button {
+          /* Default button styles */
+        }
+
+        button.start {
+          background-color: green;
+        }
+
+        button.pause {
+          background-color: yellow;
+        }
+
+        button.stop {
+          background-color: red;
+        }
